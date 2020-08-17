@@ -1,0 +1,209 @@
+@startuml
+top to bottom direction
+package view {
+
+    interface UserIO{
+        +print(): void {msg: String}
+        +readDouble(): double {prompt: String}
+        +readDouble(): double {prompt: String, min: double, max: double}
+        +readFloat(): float {prompt: String}
+        +readFloat(): float {prompt: String, min: float, max: float}
+        +readInt(): int {prompt: String}
+        +readInt(): int {prompt: String, min: int, max: int}
+        +readLong(): long {prompt: String}
+        +readLong(): long {prompt: String, min: long, max: long}
+        +readString(): String {prompt: String}
+        +readBigDecimal(): BigDecimal{prompt: String}
+        +readBigDecimal(): BigDecimal{prompt: String, min: BigDecimal}
+        +readLocalDate(): LocalDate{prompt: String}
+        +readLocalDate(): LocalDate{prompt: String, min: LocalDate}
+        
+    }
+
+    class FlooringOrderView{
+        -io: UserIO
+        -displayAddOrderBanner(): void
+        -displaySuccessfullyRemovedOrderBanner(): void
+        -displayListOrdersBanner(): void
+        +printMenuAndGetSelection(): int
+        +getDate(): LocalDate
+        +getOrderNumber(): int
+        +getArea(): BigDecimal
+        +getProductType(): String
+        +getState(): String
+        +getApproval(): String
+        +getCustomerName(): String
+        +displayOrders(): void {order: List<Order>}
+        +getSingleOrderInfo(): Order
+        
+    }
+
+     class UserIOConsoleImp<UserIO>{}
+     UserIO <|-down- UserIOConsoleImp: Implements
+
+}
+
+package controller{
+    class OrderController{
+        -view: FlooringOrderView 
+        -service: FlooringOrderService
+        -addOrder(): void
+        -removeOrder(): void
+        -listOrders(): void
+        -updateOrder(): void
+        -exportAllData(): void
+        -getMenuSelection(): int
+        +run(): void
+    }
+
+}
+
+package service{
+    interface FlooringOrderService{
+        +addOrder(): Order{order: Order}
+        +listOrders(): HashMap<int, Order>{date: LocalDate}
+        +displayOrder(): Order{LocalDate date, int orderNumber}
+        +updateOrder(): void{order: Order}
+        +removeOrder(): void{ date: LocalDate}
+        +exportAllData(): void{Map<LocalDate, Map<int, Order>}
+        
+    }
+    
+    class FlooringOrderServiceImpl<FlooringOrderService>{
+        -orderDao: FloringOrderDao
+        -productDao: FlooringProductsDao
+        -generateOrderNumber() int{List<int>}
+        -stateDao: FlooringStateDao
+        -calculateTotal() BigDecimal {area: BigDecimal, pricePerSqFt: BigDecimal, laborCostPerSqFt: BigDecimal, taxRate: BigDecimal}
+        -validateCustomerName() void {customerName: String}
+        -validateArea() void {area: BigDecimal}
+        -validateState() void{state: String}
+        -validateProductName() void{productName: String}
+        -getAllProducts() List<Product>
+        -getStates() List<State>
+    } 
+    
+    FlooringOrderService <|-down- FlooringOrderServiceImpl: Implements
+}
+
+package dao{
+
+    interface FlooringProductsDao{
+        +getProduct(): Product{String productType}
+        +getProducts(): List<Product>
+        +addProduct(): void{product Product}
+        +updateProduct(): void{product Product}
+        +deleteProduct(): void{product Product}
+    }
+    
+    class FlooringProductsDaoImpl<FlooringProductsDao>{
+        -products: HashMap<String, Product>
+        -unmarshalling: Product{String productAsText}
+        -marshalling: String{Product product}
+        -writeProducts() void
+        -readProducts() void
+    }
+
+    interface FlooringOrderDao{
+        +addOrder(): Orders{order: Order}
+        +removeOrder(): Order{order: Order}
+        +editOrder(): Order{order: Order}
+        +listOrders(): HashMap<int, Order>
+        +displayOrder(): Order{LocalDate date, int orderNumber}
+        
+    }
+
+    class FlooringOrderDaoFileImp<OrdersDao>{
+        -ordersMap: HashMap<String, Order>
+        -marshalling(): Order{orderAsText: String}
+        -unmarshalling(): String{orderAsObj: Order}
+        -write(): void
+        -read(): void
+        -readProductsFile(): void
+        -readStatesFile(): void
+    }
+    
+    interface FlooringStateDao{
+        +getState(): State{String stateName}
+        +getStates(): List<State>
+        +addState(): void{state State}
+        +updateState(): void{state State}
+        +deleteState(): void{state State}
+    }
+    
+    class FlooringStateDaoFileImpl<FlooringStateDao>{
+        -statesMap: HashMap<String, State>
+        -unmarshalling(): State{String stateAsText}
+        -marshalling(): String{State state}
+        -readStates(): void
+        -writeStates(): void
+    }
+    
+    interface AuditDao{
+        writeEntry(): void{String message}
+    }
+    
+    class AuditDaoImpl<AuditDao>{}
+    
+    class ExportAllDataDao{
+        -marshalling: String{Order: order}
+        -write() void:{HashMap<LocalDate, HashMap<int, Order}
+    }
+
+    FlooringOrderDao <|-down- FlooringOrderDaoFileImp: Implements
+    FlooringStateDao <|-down- FlooringStateDaoFileImpl: Implements
+    FlooringProductsDao <|-down- FlooringProductsDaoImpl: Implements
+    AuditDao <|-down- AuditDaoImpl: Implements
+    
+    
+    
+}
+
+package dto {
+    class Order{
+        -customerName: String
+        -orderNumber: int
+        -product: Product
+        -area: BigDecimal
+        -date: LocalDate
+        -totalLaborCost: BigDecimal
+        -totalProductCost: BigDecimal
+        -totalTax: BigDecimal
+        -state: State
+        -totalPrice: BigDecimal
+
+        +setters and getters    
+        
+    }
+    
+    class Product{
+        -productType: String
+        -productPricePerSquareFoot: BigDecimal
+        -laborPricePerSquareFoot: BigDecimal
+        
+        +setters and getters
+    }
+    
+    class State{
+        -stateAbbrevation: String
+        -stateName: String
+        -taxRate: BigDecimal
+        +setters and getters
+    }
+}
+
+FlooringOrderView *-up- UserIO: Composition
+OrderController *-up- FlooringOrderView: Composition
+OrderController *-down- FlooringOrderService: Composition
+FlooringOrderDaoFileImp *-down- Order
+FlooringOrderServiceImpl *-down- FlooringOrderDao: Composition
+FlooringOrderServiceImpl *-down- FlooringStateDao: Composition
+FlooringOrderServiceImpl *-down- FlooringProductsDao: Composition
+FlooringOrderServiceImpl *-down- ExportAllDataDao: Composition
+Order *-down- Product: Compostion
+Order *-left- State: Compostion
+
+
+
+
+@enduml
